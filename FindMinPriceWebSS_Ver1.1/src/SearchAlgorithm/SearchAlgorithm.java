@@ -40,7 +40,7 @@ public class SearchAlgorithm {
     // Xét giá nhỏ nhất để bỏ qua nó (chỉ lấy giá từ 500k trở lên)
     private static final int DEFAULT_PRICE_MIN = 500000;
 
-    private static String listProductFail = "";
+    private static StringBuilder listProductFail = new StringBuilder();
     private static StringBuilder textProductExport = new StringBuilder();
 
     public void searchProduct(String linkPathFile,
@@ -115,7 +115,7 @@ public class SearchAlgorithm {
                     }
 
                     if (codeSearchProductInWeb.equals("")) {
-                        listProductFail += tempProduct + "\n";
+                        listProductFail.append(tempProduct).append("\n");
                         System.out.println("Not found name product...");
                         continue;
                     }
@@ -124,6 +124,7 @@ public class SearchAlgorithm {
 
                     // Get source code of websosanh
                     int defaultPrice = 100000000, price, sumPages = 1, numberPage = 1;
+                    boolean error = false;
 
                     do {
 
@@ -137,7 +138,7 @@ public class SearchAlgorithm {
 
                         URL url = new URL(urlText);
                         URLConnection connectURL = url.openConnection();
-//                        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("", 3128));
+//                        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 3128));
 //                        URLConnection connectURL = new URL(urlText).openConnection(proxy);
 
                         // Get inputStreamReader
@@ -249,7 +250,10 @@ public class SearchAlgorithm {
                             }
                         } catch (IOException ex) {
                             System.out.println("Error connect to server!");
-                            listProductFail = listProductFail + tempProduct + "\n";
+                            System.err.println("Error connect to server!");
+                            error = true;
+
+                            listProductFail.append(tempProduct).append("\n");
                             Logger.getLogger(SearchAlgorithm.class.getName()).
                                     log(Level.SEVERE, null, ex);
                         }
@@ -257,6 +261,10 @@ public class SearchAlgorithm {
                         numberPage++;
 
                     } while (numberPage <= sumPages);
+
+                    if (error) {
+                        continue;
+                    }
 
                     long timeEnd = System.currentTimeMillis();
                     System.out.println(
@@ -287,10 +295,11 @@ public class SearchAlgorithm {
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
 
-        if (!listProductFail.equals("")) {
+        if (listProductFail.length() != 0) {
             try {
                 this.output(linkSaveFileProduct + "_Products_Error.txt",
-                        listProductFail);
+                        listProductFail.toString());
+                listProductFail = new StringBuilder();
             } catch (IOException ex) {
                 Logger.getLogger(SearchAlgorithm.class.getName()).log(
                         Level.SEVERE, null, ex);
@@ -317,6 +326,7 @@ public class SearchAlgorithm {
         try {
             this.output(linkSaveFileProduct + ".txt", textProductExport.
                     toString());
+            textProductExport = new StringBuilder();
         } catch (IOException ex) {
             Logger.getLogger(SearchAlgorithm.class.getName()).
                     log(Level.SEVERE, null, ex);
@@ -326,10 +336,10 @@ public class SearchAlgorithm {
         }
     }
 
-    private void output(String linkFile, String contain) throws IOException {
+    private void output(String path, String content) throws IOException {
         try (Writer out = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(linkFile), "UTF-8"))) {
-            out.write(contain);
+                new FileOutputStream(path), "UTF-8"))) {
+            out.write(content);
         }
     }
 
